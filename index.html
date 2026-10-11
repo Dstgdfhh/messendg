@@ -1,0 +1,1944 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chatti — готовый P2P мессенджер</title>
+
+  <style>
+    :root {
+      --bg: #070910;
+      --panel: rgba(13, 16, 26, 0.72);
+      --panel-2: rgba(255, 255, 255, 0.045);
+      --text: #f4f7ff;
+      --muted: #9aa4c2;
+      --border: rgba(255, 255, 255, 0.09);
+      --accent: linear-gradient(135deg, #7c5cff, #38bdf8);
+      --good: #22c55e;
+      --warn: #f59e0b;
+      --shadow: 0 30px 90px rgba(0, 0, 0, 0.42);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+      color: inherit;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background-color: var(--bg);
+      background-image:
+        radial-gradient(circle at 15% 18%, rgba(124, 92, 255, 0.22), transparent 30%),
+        radial-gradient(circle at 80% 12%, rgba(56, 189, 248, 0.18), transparent 26%),
+        radial-gradient(circle at 80% 82%, rgba(255, 95, 162, 0.10), transparent 25%);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+    }
+
+    .app {
+      width: min(1360px, 100%);
+      height: min(920px, calc(100dvh - 36px));
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      overflow: hidden;
+      border-radius: 34px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(20px);
+    }
+
+    .sidebar {
+      padding: 18px;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: auto;
+      background: linear-gradient(180deg, rgba(124, 92, 255, 0.08), transparent 22%);
+    }
+
+    .profile-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 6px 2px 10px;
+    }
+
+    .avatar {
+      width: 46px;
+      height: 46px;
+      border-radius: 18px;
+      background: var(--accent);
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .profile-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .profile-name {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .profile-status {
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 4px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--good);
+      box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+      flex: 0 0 auto;
+    }
+
+    .dot.offline {
+      background: var(--warn);
+      box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.12);
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 15px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      cursor: pointer;
+      transition: 0.18s ease;
+      display: grid;
+      place-items: center;
+    }
+
+    .icon-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      border-radius: 22px;
+      padding: 14px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .id-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .id-row.two {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      margin-top: 0;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px;
+      outline: none;
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(124, 92, 255, 0.55);
+      box-shadow: 0 0 0 4px rgba(124, 92, 255, 0.12);
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: 0.18s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      box-shadow: 0 16px 30px rgba(56, 189, 248, 0.18);
+    }
+
+    .contacts {
+      margin-top: 2px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      padding: 12px;
+      border: 1px dashed var(--border);
+      border-radius: 18px;
+      text-align: center;
+      line-height: 1.45;
+    }
+
+    .contact {
+      display: grid;
+      grid-template-columns: 42px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+      padding: 10px;
+      border-radius: 18px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+      transition: 0.18s ease;
+    }
+
+    .contact:hover {
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .contact.active {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--border);
+    }
+
+    .contact .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      font-size: 18px;
+    }
+
+    .contact-info {
+      min-width: 0;
+    }
+
+    .contact-name {
+      font-size: 14px;
+      font-weight: 650;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .contact-last {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 2px;
+    }
+
+    .contact-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+    }
+
+    .contact-time {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .chat {
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+    }
+
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(12px);
+    }
+
+    .chat-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .chat-title .name {
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-title .sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .messages {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: linear-gradient(180deg, transparent, rgba(124, 92, 255, 0.035));
+    }
+
+    .empty-large {
+      margin: auto;
+      color: var(--muted);
+      text-align: center;
+      padding: 30px;
+      line-height: 1.6;
+    }
+
+    .msg-row {
+      display: flex;
+      max-width: min(78%, 760px);
+      animation: slideUp 0.22s ease;
+    }
+
+    .msg-row.in {
+      align-self: flex-start;
+    }
+
+    .msg-row.out {
+      align-self: flex-end;
+    }
+
+    .msg {
+      position: relative;
+      padding: 12px 14px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      max-width: 100%;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    .msg-row.out .msg {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+      box-shadow: 0 18px 40px rgba(56, 189, 248, 0.2);
+    }
+
+    .msg-text {
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.45;
+    }
+
+    .msg-meta {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 7px;
+      font-size: 11px;
+      opacity: 0.72;
+      justify-content: flex-end;
+    }
+
+    .auto-badge {
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .msg.liked::after {
+      content: "❤️";
+      position: absolute;
+      top: -15px;
+      right: 12px;
+      font-size: 14px;
+      animation: pop 0.25s ease;
+      filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.18));
+    }
+
+    .quick {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 10px;
+      overflow: auto;
+    }
+
+    .quick button {
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: 0.18s ease;
+      font-size: 13px;
+    }
+
+    .quick button:hover {
+      background: rgba(255, 255, 255, 0.09);
+      transform: translateY(-1px);
+    }
+
+    .composer {
+      display: flex;
+      gap: 10px;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(12px);
+    }
+
+    .composer input {
+      flex: 1;
+    }
+
+    .send-btn {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      padding: 0 18px;
+      border-radius: 18px;
+      cursor: pointer;
+      box-shadow: 0 18px 34px rgba(56, 189, 248, 0.2);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(6px);
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.2s ease;
+      z-index: 60;
+    }
+
+    .modal-backdrop.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      width: min(720px, calc(100vw - 28px));
+      max-height: calc(100vh - 28px);
+      overflow: auto;
+      background: rgba(10, 12, 20, 0.96);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .modal-head h2 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    label input,
+    label select,
+    label textarea {
+      margin-top: 7px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+    }
+
+    .check input {
+      width: auto;
+      margin: 0;
+    }
+
+    .section {
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.03);
+      margin-top: 10px;
+    }
+
+    .section h3 {
+      margin: 0 0 14px;
+      font-size: 16px;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .days {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .day {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 13px;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .day input {
+      width: auto;
+      margin: 0;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(10, 12, 20, 0.92);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.25s ease;
+      z-index: 99;
+      max-width: calc(100vw - 32px);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .menu-btn {
+      display: none;
+    }
+
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      border: 3px solid transparent;
+      background-clip: padding-box;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    @keyframes pop {
+      from {
+        transform: scale(0.4);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 900px) {
+      body {
+        padding: 0;
+      }
+
+      .app {
+        grid-template-columns: 1fr;
+        height: 100dvh;
+        border-radius: 0;
+      }
+
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: min(320px, 86vw);
+        transform: translateX(-105%);
+        transition: 0.25s ease;
+        z-index: 50;
+        background: #0a0d14;
+      }
+
+      .sidebar.show {
+        transform: none;
+      }
+
+      .menu-btn {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="profile-card">
+        <div class="avatar" id="profileAvatar">G</div>
+
+        <div class="profile-info">
+          <div class="profile-name" id="profileName">Гость</div>
+          <div class="profile-status">
+            <span class="dot offline" id="profileDot"></span>
+            <span id="profileStatus">Подключение...</span>
+          </div>
+        </div>
+
+        <button class="icon-btn" id="settingsBtn" title="Настройки профиля">⚙</button>
+      </div>
+
+      <section class="panel">
+        <div class="panel-title">Мой ID</div>
+
+        <div class="id-row">
+          <input id="myId" readonly />
+          <button class="btn" id="copyIdBtn">Копировать</button>
+        </div>
+
+        <div class="id-row two">
+          <button class="btn primary" id="shareLinkBtn">Ссылка на меня</button>
+          <button class="btn" id="newIdBtn">Новый ID</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Добавить контакт</div>
+
+        <div class="id-row">
+          <input id="contactIdInput" placeholder="ID или ссылка" />
+          <button class="btn" id="addContactBtn">Добавить</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-title">Поиск</div>
+        <input id="searchInput" placeholder="Поиск по контактам" />
+      </section>
+
+      <div class="contacts" id="contacts"></div>
+    </aside>
+
+    <main class="chat">
+      <header class="chat-header">
+        <button class="icon-btn menu-btn" id="menuBtn" title="Меню">☰</button>
+
+        <div class="chat-title">
+          <div class="avatar" id="chatAvatar">?</div>
+
+          <div style="min-width:0;">
+            <div class="name" id="chatName">Нет контакта</div>
+            <div class="sub" id="chatStatus">Добавьте контакт по ID</div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button class="icon-btn" id="chatShareBtn" title="Поделиться этим контактом">↗</button>
+          <button class="icon-btn" id="deleteContactBtn" title="Удалить контакт">🗑</button>
+        </div>
+      </header>
+
+      <div class="messages" id="messages">
+        <div class="empty-large">
+          Выберите контакт слева или добавьте новый по ID.
+        </div>
+      </div>
+
+      <div class="quick">
+        <button data-msg="Здравствуйте!">Здравствуйте!</button>
+        <button data-msg="Нужна консультация">Консультация</button>
+        <button data-msg="Хочу оставить контакт">Оставить контакт</button>
+        <button data-msg="Когда вы на связи?">Когда вы на связи?</button>
+      </div>
+
+      <form class="composer" id="composer">
+        <input
+          id="messageInput"
+          type="text"
+          placeholder="Написать сообщение..."
+          autocomplete="off"
+        />
+        <button class="send-btn" type="submit">Отправить</button>
+      </form>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal">
+      <div class="modal-head">
+        <h2>Профиль и автоответ</h2>
+        <button class="icon-btn" id="closeSettingsBtn" title="Закрыть">×</button>
+      </div>
+
+      <label>
+        Имя
+        <input id="setName" placeholder="Ваше имя" />
+      </label>
+
+      <label>
+        О себе
+        <input id="setAbout" placeholder="Например: дизайн, услуги, личный аккаунт" />
+      </label>
+
+      <label>
+        Статус
+        <select id="setStatus">
+          <option value="online">Онлайн</option>
+          <option value="away">Отошёл</option>
+        </select>
+      </label>
+
+      <label>
+        Мой ID
+        <input id="settingsId" placeholder="chatti-..." />
+      </label>
+
+      <div class="section">
+        <h3>Автоответ</h3>
+
+        <label class="check">
+          <input type="checkbox" id="autoEnabled" />
+          Включить автоответ
+        </label>
+
+        <label>
+          Когда отвечать
+          <select id="autoMode">
+            <option value="always">Всегда</option>
+            <option value="away">Когда статус «Отошёл»</option>
+            <option value="schedule">Вне рабочего времени</option>
+          </select>
+        </label>
+
+        <label>
+          Текст автоответа
+          <textarea
+            id="autoText"
+            rows="4"
+            placeholder="Здравствуйте! Я получил ваше сообщение. Отвечу чуть позже."
+          ></textarea>
+        </label>
+
+        <div id="scheduleBlock">
+          <div class="grid2">
+            <label>
+              Начало рабочего времени
+              <input type="time" id="workStart" />
+            </label>
+
+            <label>
+              Конец рабочего времени
+              <input type="time" id="workEnd" />
+            </label>
+          </div>
+
+          <div class="days" id="daysRow"></div>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn" id="closeSettingsBtn2">Отмена</button>
+        <button class="btn primary" id="saveSettingsBtn">Сохранить</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const BOT_ID = "chatti-bot";
+
+    const contactsEl = $("contacts");
+    const messagesEl = $("messages");
+    const toastEl = $("toast");
+
+    let activeId = null;
+    let connections = {};
+    let peer = null;
+    let idRetries = 0;
+    let toastTimer = null;
+    let searchTerm = "";
+
+    function load(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (error) {
+        return fallback;
+      }
+    }
+
+    function save(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function generateId() {
+      const rand = () =>
+        Math.random()
+          .toString(36)
+          .replace(/[^a-z0-9]/g, "")
+          .slice(2, 8);
+
+      return "chatti-" + rand() + rand();
+    }
+
+    function defaultProfile() {
+      return {
+        id: generateId(),
+        name: "Гость",
+        about: "",
+        status: "online",
+        autoReply: {
+          enabled: true,
+          mode: "always",
+          text: "Здравствуйте! Я получил ваше сообщение. Отвечу, как только буду на связи.",
+          workStart: "09:00",
+          workEnd: "18:00",
+          days: [1, 2, 3, 4, 5],
+        },
+      };
+    }
+
+    let profile = load("chatti_profile", null);
+
+    if (!profile) {
+      profile = defaultProfile();
+      save("chatti_profile", profile);
+    }
+
+    let contacts = load("chatti_contacts", []);
+    let messages = load("chatti_messages", {});
+    let pending = load("chatti_pending", {});
+
+    function saveProfile() {
+      save("chatti_profile", profile);
+    }
+
+    function saveContacts() {
+      save("chatti_contacts", contacts);
+    }
+
+    function saveMessages() {
+      save("chatti_messages", messages);
+    }
+
+    function savePending() {
+      save("chatti_pending", pending);
+    }
+
+    function showToast(text) {
+      toastEl.textContent = text;
+      toastEl.classList.add("show");
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toastEl.classList.remove("show");
+      }, 2600);
+    }
+
+    function fmtTime(ts) {
+      return new Date(ts).toLocaleTimeString("ru-RU", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+
+    function prettyId(id) {
+      if (!id) return "?";
+      return id.length > 18 ? id.slice(0, 10) + "..." : id;
+    }
+
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (error) {
+        const area = document.createElement("textarea");
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+      }
+    }
+
+    function parseContactInput(raw) {
+      raw = String(raw || "").trim();
+
+      let id = raw;
+      let name = "";
+
+      const addMatch = raw.match(/[?&]add=([^&]+)/);
+      const nameMatch = raw.match(/[?&]name=([^&]+)/);
+
+      if (addMatch) {
+        id = decodeURIComponent(addMatch[1]);
+      }
+
+      if (nameMatch) {
+        name = decodeURIComponent(nameMatch[1]);
+      }
+
+      return {
+        id,
+        name,
+      };
+    }
+
+    function renderProfile() {
+      $("myId").value = profile.id || "";
+      $("settingsId").value = profile.id || "";
+      $("profileName").textContent = profile.name || "Гость";
+      $("profileAvatar").textContent = (profile.name || "G")
+        .trim()
+        .charAt(0)
+        .toUpperCase();
+
+      updateNetworkStatus();
+    }
+
+    function updateNetworkStatus() {
+      const online = Boolean(peer && peer.open && !peer.destroyed);
+
+      $("profileDot").classList.toggle("offline", !online);
+
+      if (online) {
+        $("profileStatus").textContent =
+          profile.status === "away"
+            ? "Отошёл · сеть активна"
+            : "Онлайн · сеть активна";
+      } else {
+        $("profileStatus").textContent =
+          profile.status === "away"
+            ? "Отошёл · подключение..."
+            : "Онлайн · подключение...";
+      }
+    }
+
+    function getContact(id) {
+      return contacts.find((item) => item.id === id);
+    }
+
+    function addContact(id, name) {
+      id = String(id || "").trim();
+
+      if (!id) return null;
+
+      if (id === profile.id) {
+        showToast("Это ваш собственный ID");
+        return null;
+      }
+
+      if (id === BOT_ID) {
+        name = name || "Помощник";
+      }
+
+      let contact = getContact(id);
+
+      if (!contact) {
+        contact = {
+          id,
+          name: name || prettyId(id),
+          last: "",
+          updatedAt: Date.now(),
+          online: id === BOT_ID,
+        };
+
+        contacts.unshift(contact);
+        saveContacts();
+        renderContacts();
+      } else if (name && contact.name !== name) {
+        contact.name = name;
+        saveContacts();
+        renderContacts();
+      }
+
+      return contact;
+    }
+
+    function updateContactLast(id, text) {
+      const contact = getContact(id);
+      if (!contact) return;
+
+      contact.last = text;
+      contact.updatedAt = Date.now();
+
+      saveContacts();
+      renderContacts();
+    }
+
+    function updateContactOnline(id, online) {
+      const contact = getContact(id);
+      if (!contact) return;
+
+      contact.online = online;
+      saveContacts();
+      renderContacts();
+
+      if (activeId === id) {
+        updateChatStatus();
+      }
+    }
+
+    function updateContactName(id, name) {
+      const contact = getContact(id);
+
+      if (contact && name && contact.name !== name) {
+        contact.name = name;
+        saveContacts();
+        renderContacts();
+
+        if (activeId === id) {
+          $("chatName").textContent = name;
+        }
+      }
+    }
+
+    function renderContacts() {
+      contactsEl.innerHTML = "";
+
+      const term = searchTerm.toLowerCase();
+
+      const filtered = contacts.filter((contact) => {
+        return (
+          (contact.name || "").toLowerCase().includes(term) ||
+          contact.id.toLowerCase().includes(term) ||
+          (contact.last || "").toLowerCase().includes(term)
+        );
+      });
+
+      if (!filtered.length) {
+        const empty = document.createElement("div");
+        empty.className = "empty";
+        empty.textContent =
+          "Нет контактов. Добавьте чужой ID, вставьте ссылку или отправьте кому-то свою ссылку.";
+        contactsEl.appendChild(empty);
+        return;
+      }
+
+      filtered
+        .slice()
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+        .forEach((contact) => {
+          const button = document.createElement("button");
+          button.className = "contact" + (contact.id === activeId ? " active" : "");
+
+          const avatar = document.createElement("div");
+          avatar.className = "avatar";
+          avatar.textContent = (contact.name || "?").charAt(0).toUpperCase();
+
+          const info = document.createElement("div");
+          info.className = "contact-info";
+
+          const name = document.createElement("div");
+          name.className = "contact-name";
+          name.textContent = contact.name || contact.id;
+
+          const last = document.createElement("div");
+          last.className = "contact-last";
+          last.textContent = contact.last || "Нет сообщений";
+
+          info.append(name, last);
+
+          const meta = document.createElement("div");
+          meta.className = "contact-meta";
+
+          const dot = document.createElement("span");
+          const isOnline =
+            contact.id === BOT_ID ||
+            Boolean(connections[contact.id] && connections[contact.id].open);
+
+          dot.className = "dot" + (isOnline ? "" : " offline");
+
+          const time = document.createElement("span");
+          time.className = "contact-time";
+          time.textContent = contact.updatedAt
+            ? new Date(contact.updatedAt).toLocaleTimeString("ru-RU", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "";
+
+          meta.append(dot, time);
+
+          button.append(avatar, info, meta);
+
+          button.onclick = () => {
+            openChat(contact.id);
+          };
+
+          contactsEl.appendChild(button);
+        });
+    }
+
+    function renderMessages() {
+      messagesEl.innerHTML = "";
+
+      if (!activeId) {
+        messagesEl.innerHTML =
+          '<div class="empty-large">Выберите контакт или добавьте новый по ID.</div>';
+        return;
+      }
+
+      const list = messages[activeId] || [];
+
+      if (!list.length) {
+        messagesEl.innerHTML =
+          '<div class="empty-large">Сообщений пока нет. Напишите первым.</div>';
+        return;
+      }
+
+      list.forEach((message, index) => {
+        const row = document.createElement("div");
+        row.className = "msg-row " + (message.from === "me" ? "out" : "in");
+        row.dataset.index = index;
+
+        const bubble = document.createElement("div");
+        bubble.className = "msg" + (message.liked ? " liked" : "");
+
+        const text = document.createElement("div");
+        text.className = "msg-text";
+        text.textContent = message.text;
+
+        const meta = document.createElement("div");
+        meta.className = "msg-meta";
+
+        if (message.auto) {
+          const auto = document.createElement("span");
+          auto.className = "auto-badge";
+          auto.textContent = "авто";
+          meta.appendChild(auto);
+        }
+
+        const time = document.createElement("span");
+        time.textContent = fmtTime(message.ts);
+
+        meta.appendChild(time);
+
+        bubble.append(text, meta);
+        row.appendChild(bubble);
+        messagesEl.appendChild(row);
+      });
+
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function addMessage(contactId, message) {
+      if (!messages[contactId]) {
+        messages[contactId] = [];
+      }
+
+      messages[contactId].push(message);
+      saveMessages();
+
+      const prefix = message.auto ? "[авто] " : "";
+      updateContactLast(contactId, prefix + message.text);
+
+      if (activeId === contactId) {
+        renderMessages();
+      }
+    }
+
+    function openChat(id) {
+      activeId = id;
+
+      const contact = getContact(id);
+
+      $("chatName").textContent = contact ? contact.name || contact.id : prettyId(id);
+      $("chatAvatar").textContent = ((contact && contact.name) || "?")
+        .charAt(0)
+        .toUpperCase();
+
+      renderContacts();
+      renderMessages();
+      updateChatStatus();
+
+      if (id !== profile.id && id !== BOT_ID) {
+        connectTo(id);
+      }
+
+      if (window.innerWidth <= 900) {
+        $("sidebar").classList.remove("show");
+      }
+
+      $("messageInput").focus();
+    }
+
+    function updateChatStatus() {
+      if (!activeId) {
+        $("chatName").textContent = "Нет контакта";
+        $("chatStatus").textContent = "Добавьте контакт по ID";
+        return;
+      }
+
+      if (activeId === BOT_ID) {
+        $("chatStatus").textContent = "локальный помощник";
+        return;
+      }
+
+      const open = Boolean(connections[activeId] && connections[activeId].open);
+
+      $("chatStatus").textContent = open
+        ? "соединение активно"
+        : "не в сети / пробуем подключить";
+    }
+
+    function queuePending(id, data) {
+      if (!pending[id]) {
+        pending[id] = [];
+      }
+
+      pending[id].push(data);
+      savePending();
+    }
+
+    function flushPending(id) {
+      const connection = connections[id];
+
+      if (connection && connection.open && pending[id] && pending[id].length) {
+        pending[id].forEach((data) => {
+          try {
+            connection.send(data);
+          } catch (error) {
+            console.error(error);
+          }
+        });
+
+        pending[id] = [];
+        savePending();
+      }
+    }
+
+    function sendTo(id, text, auto) {
+      if (id === BOT_ID) {
+        return true;
+      }
+
+      const data = {
+        type: "msg",
+        text,
+        auto,
+      };
+
+      const connection = connections[id];
+
+      if (connection && connection.open) {
+        try {
+          connection.send(data);
+          return true;
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      queuePending(id, data);
+      connectTo(id);
+
+      return false;
+    }
+
+    function maybeAutoReply(remoteId, data) {
+      if (data.auto) return;
+
+      const auto = profile.autoReply;
+
+      if (!auto || !auto.enabled || !auto.text) return;
+
+      if (auto.mode === "away" && profile.status !== "away") return;
+
+      if (auto.mode === "schedule" && isWorkTime()) return;
+
+      const cooldownKey = "chatti_auto_" + remoteId;
+      const last = Number(localStorage.getItem(cooldownKey) || 0);
+
+      if (Date.now() - last < 60000) return;
+
+      localStorage.setItem(cooldownKey, String(Date.now()));
+
+      setTimeout(() => {
+        const connection = connections[remoteId];
+
+        if (connection && connection.open) {
+          try {
+            connection.send({
+              type: "msg",
+              text: auto.text,
+              auto: true,
+            });
+
+            addMessage(remoteId, {
+              from: "me",
+              text: auto.text,
+              ts: Date.now(),
+              auto: true,
+            });
+          } catch (error) {
+            console.error(error);
+          }
+        }
+      }, 800);
+    }
+
+    function toMinutes(value) {
+      const parts = String(value || "00:00").split(":");
+      const hours = Number(parts[0] || 0);
+      const minutes = Number(parts[1] || 0);
+      return hours * 60 + minutes;
+    }
+
+    function isWorkTime() {
+      const now = new Date();
+      const day = now.getDay();
+
+      const days = profile.autoReply.days || [];
+
+      if (!days.includes(day)) return false;
+
+      const start = toMinutes(profile.autoReply.workStart || "09:00");
+      const end = toMinutes(profile.autoReply.workEnd || "18:00");
+      const current = now.getHours() * 60 + now.getMinutes();
+
+      return current >= start && current < end;
+    }
+
+    function handleData(remoteId, data) {
+      if (!data || data.type !== "msg") return;
+
+      const text = String(data.text || "");
+      const auto = Boolean(data.auto);
+
+      addContact(remoteId);
+
+      addMessage(remoteId, {
+        from: "them",
+        text,
+        ts: Date.now(),
+        auto,
+      });
+
+      maybeAutoReply(remoteId, data);
+    }
+
+    function setupConnection(connection, incoming) {
+      const remoteId = connection.peer;
+
+      if (!remoteId) return;
+
+      if (connections[remoteId] && connections[remoteId] !== connection) {
+        try {
+          connections[remoteId].close();
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      connections[remoteId] = connection;
+
+      const meta = connection.metadata || {};
+
+      if (meta.name) {
+        addContact(remoteId, meta.name);
+      } else {
+        addContact(remoteId);
+      }
+
+      connection.on("open", () => {
+        if (meta.name) {
+          updateContactName(remoteId, meta.name);
+        }
+
+        updateContactOnline(remoteId, true);
+        flushPending(remoteId);
+
+        if (activeId === remoteId) {
+          updateChatStatus();
+        }
+      });
+
+      connection.on("data", (data) => {
+        handleData(remoteId, data);
+      });
+
+      connection.on("close", () => {
+        if (connections[remoteId] === connection) {
+          delete connections[remoteId];
+        }
+
+        updateContactOnline(remoteId, false);
+
+        if (activeId === remoteId) {
+          updateChatStatus();
+        }
+      });
+
+      connection.on("error", () => {
+        if (connections[remoteId] === connection) {
+          delete connections[remoteId];
+        }
+
+        updateContactOnline(remoteId, false);
+
+        if (activeId === remoteId) {
+          updateChatStatus();
+        }
+      });
+    }
+
+    function connectTo(id) {
+      if (!id || id === profile.id || id === BOT_ID) return;
+
+      if (!peer || peer.destroyed) return;
+
+      if (connections[id]) return;
+
+      try {
+        const connection = peer.connect(id, {
+          metadata: {
+            name: profile.name,
+          },
+        });
+
+        setupConnection(connection, false);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    function initPeer() {
+      if (!window.Peer) {
+        showToast("PeerJS не загружен. Локальный режим доступен.");
+        updateNetworkStatus();
+        return;
+      }
+
+      if (peer) {
+        try {
+          peer.destroy();
+        } catch (error) {
+          console.error(error);
+        }
+
+        connections = {};
+      }
+
+      peer = new Peer(profile.id, {
+        debug: 0,
+      });
+
+      peer.on("open", (id) => {
+        profile.id = id;
+        saveProfile();
+
+        renderProfile();
+        updateNetworkStatus();
+        renderContacts();
+
+        if (activeId) {
+          connectTo(activeId);
+        }
+
+        Object.keys(pending).forEach((contactId) => {
+          connectTo(contactId);
+        });
+      });
+
+      peer.on("connection", (connection) => {
+        setupConnection(connection, true);
+      });
+
+      peer.on("disconnected", () => {
+        updateNetworkStatus();
+      });
+
+      peer.on("close", () => {
+        updateNetworkStatus();
+      });
+
+      peer.on("error", (error) => {
+        console.error(error);
+
+        if (error.type === "unavailable-id") {
+          idRetries += 1;
+
+          if (idRetries <= 2) {
+            profile.id = generateId();
+            saveProfile();
+            renderProfile();
+            initPeer();
+          } else {
+            showToast("Не удалось получить свободный ID");
+          }
+        } else if (error.type === "peer-unavailable") {
+          // Собеседник офлайн.
+        } else {
+          showToast("Ошибка сети: " + error.type);
+        }
+
+        updateNetworkStatus();
+      });
+    }
+
+    function botRespond(userText) {
+      const lower = userText.toLowerCase();
+
+      let reply =
+        "Я локальный помощник. Могу показать, что интерфейс работает. Для реальной переписки добавьте контакт по ID или отправьте свою ссылку.";
+
+      if (/привет|здрав|добрый/.test(lower)) {
+        reply =
+          "Здравствуйте! Я встроенный помощник. Здесь можно проверить интерфейс, автоответ и отправку сообщений.";
+      }
+
+      if (/автоответ|авто/.test(lower)) {
+        reply =
+          "Автоответ настраивается в настройках профиля: всегда, когда отошёл, или вне рабочего времени.";
+      }
+
+      if (/id|ид|айди/.test(lower)) {
+        reply =
+          "Ваш ID: " +
+          profile.id +
+          ". Его можно скопировать или отправить ссылкой через кнопку «Ссылка на меня».";
+      }
+
+      if (/цена|прайс|стоим|купить|заказ/.test(lower)) {
+        reply =
+          "Если это заявка, оставьте контакт. В реальном чате автоответ примет её и передаст менеджеру.";
+      }
+
+      setTimeout(() => {
+        addMessage(BOT_ID, {
+          from: "them",
+          text: reply,
+          ts: Date.now(),
+          auto: true,
+        });
+      }, 800);
+    }
+
+    function sendUserMessage(text) {
+      text = String(text || "").trim();
+
+      if (!text || !activeId) return;
+
+      addMessage(activeId, {
+        from: "me",
+        text,
+        ts: Date.now(),
+        auto: false,
+      });
+
+      if (activeId === BOT_ID) {
+        botRespond(text);
+        return;
+      }
+
+      const sent = sendTo(activeId, text, false);
+
+      if (!sent) {
+        showToast("Сообщение в очереди. Отправим при подключении.");
+      }
+    }
+
+    function openSettings() {
+      $("setName").value = profile.name || "";
+      $("setAbout").value = profile.about || "";
+      $("setStatus").value = profile.status || "online";
+      $("settingsId").value = profile.id || "";
+
+      $("autoEnabled").checked = Boolean(profile.autoReply.enabled);
+      $("autoMode").value = profile.autoReply.mode || "always";
+      $("autoText").value = profile.autoReply.text || "";
+      $("workStart").value = profile.autoReply.workStart || "09:00";
+      $("workEnd").value = profile.autoReply.workEnd || "18:00";
+
+      renderDays();
+      toggleSchedule();
+
+      $("settingsModal").classList.add("show");
+    }
+
+    function closeSettings() {
+      $("settingsModal").classList.remove("show");
+    }
+
+    function renderDays() {
+      const defs = [
+        [1, "Пн"],
+        [2, "Вт"],
+        [3, "Ср"],
+        [4, "Чт"],
+        [5, "Пт"],
+        [6, "Сб"],
+        [0, "Вс"],
+      ];
+
+      const row = $("daysRow");
+      row.innerHTML = "";
+
+      defs.forEach(([value, label]) => {
+        const dayLabel = document.createElement("label");
+        dayLabel.className = "day";
+
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.value = value;
+        input.checked = (profile.autoReply.days || []).includes(value);
+
+        const span = document.createElement("span");
+        span.textContent = label;
+
+        dayLabel.append(input, span);
+        row.appendChild(dayLabel);
+      });
+    }
+
+    function toggleSchedule() {
+      $("scheduleBlock").style.display =
+        $("autoMode").value === "schedule" ? "block" : "none";
+    }
+
+    $("settingsBtn").onclick = openSettings;
+    $("closeSettingsBtn").onclick = closeSettings;
+    $("closeSettingsBtn2").onclick = closeSettings;
+
+    $("settingsModal").addEventListener("click", (event) => {
+      if (event.target === $("settingsModal")) {
+        closeSettings();
+      }
+    });
+
+    $("autoMode").addEventListener("change", toggleSchedule);
+
+    $("saveSettingsBtn").onclick = () => {
+      profile.name = $("setName").value.trim() || "Гость";
+      profile.about = $("setAbout").value.trim();
+      profile.status = $("setStatus").value;
+
+      profile.autoReply.enabled = $("autoEnabled").checked;
+      profile.autoReply.mode = $("autoMode").value;
+      profile.autoReply.text =
+        $("autoText").value.trim() ||
+        "Здравствуйте! Я получил ваше сообщение. Отвечу чуть позже.";
+
+      profile.autoReply.workStart = $("workStart").value || "09:00";
+      profile.autoReply.workEnd = $("workEnd").value || "18:00";
+
+      profile.autoReply.days = Array.from(
+        document.querySelectorAll("#daysRow input:checked")
+      ).map((input) => Number(input.value));
+
+      const rawId = $("settingsId").value.trim();
+
+      let safeId = rawId
+        .toLowerCase()
+        .replace(/[^a-z0-9-_]/g, "-");
+
+      if (safeId === BOT_ID) {
+        safeId = "user-" + safeId;
+      }
+
+      if (safeId && safeId !== profile.id) {
+        profile.id = safeId;
+        idRetries = 0;
+        initPeer();
+      }
+
+      saveProfile();
+      renderProfile();
+      closeSettings();
+      showToast("Сохранено");
+    };
+
+    $("copyIdBtn").onclick = async () => {
+      await copyText(profile.id);
+      showToast("ID скопирован");
+    };
+
+    $("shareLinkBtn").onclick = async () => {
+      const url =
+        location.href.split("?")[0] +
+        "?add=" +
+        encodeURIComponent(profile.id) +
+        "&name=" +
+        encodeURIComponent(profile.name || "Контакт");
+
+      await copyText(url);
+      showToast("Ссылка на ваш контакт скопирована");
+    };
+
+    $("newIdBtn").onclick = () => {
+      profile.id = generateId();
+      idRetries = 0;
+
+      saveProfile();
+      renderProfile();
+      initPeer();
+
+      showToast("Создан новый ID");
+    };
+
+    $("chatShareBtn").onclick = async () => {
+      if (!activeId) {
+        showToast("Сначала выберите контакт");
+        return;
+      }
+
+      const contact = getContact(activeId);
+
+      const url =
+        location.href.split("?")[0] +
+        "?add=" +
+        encodeURIComponent(activeId) +
+        "&name=" +
+        encodeURIComponent((contact && contact.name) || "Контакт");
+
+      await copyText(url);
+      showToast("Ссылка на контакт скопирована");
+    };
+
+    $("deleteContactBtn").onclick = () => {
+      if (!activeId) {
+        showToast("Сначала выберите контакт");
+        return;
+      }
+
+      if (!confirm("Удалить контакт и историю?")) return;
+
+      const id = activeId;
+
+      contacts = contacts.filter((contact) => contact.id !== id);
+
+      delete messages[id];
+      delete pending[id];
+
+      if (connections[id]) {
+        try {
+          connections[id].close();
+        } catch (error) {
+          console.error(error);
+        }
+
+        delete connections[id];
+      }
+
+      saveContacts();
+      saveMessages();
+      savePending();
+
+      activeId = null;
+
+      $("chatName").textContent = "Нет контакта";
+      $("chatStatus").textContent = "Добавьте контакт по ID";
+      $("chatAvatar").textContent = "?";
+
+      renderContacts();
+      renderMessages();
+
+      showToast("Контакт удалён");
+    };
+
+    $("addContactBtn").onclick = () => {
+      const parsed = parseContactInput($("contactIdInput").value);
+
+      if (!parsed.id) return;
+
+      addContact(parsed.id, parsed.name);
+      openChat(parsed.id);
+
+      $("contactIdInput").value = "";
+    };
+
+    $("contactIdInput").addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        $("addContactBtn").click();
+      }
+    });
+
+    $("searchInput").addEventListener("input", (event) => {
+      searchTerm = event.target.value.trim();
+      renderContacts();
+    });
+
+    $("composer").addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      sendUserMessage($("messageInput").value);
+
+      $("messageInput").value = "";
+    });
+
+    document.querySelectorAll(".quick button").forEach((button) => {
+      button.onclick = () => {
+        sendUserMessage(button.dataset.msg);
+      };
+    });
+
+    messagesEl.addEventListener("dblclick", (event) => {
+      const row = event.target.closest(".msg-row");
+
+      if (!row || !activeId) return;
+
+      const index = Number(row.dataset.index);
+      const list = messages[activeId];
+
+      if (!list || !list[index]) return;
+
+      list[index].liked = !list[index].liked;
+
+      saveMessages();
+      renderMessages();
+    });
+
+    $("menuBtn").onclick = () => {
+      $("sidebar").classList.toggle("show");
+    };
+
+    function handleUrl() {
+      const params = new URLSearchParams(location.search);
+
+      const add =
+        params.get("add") ||
+        params.get("id") ||
+        params.get("c");
+
+      const name = params.get("name");
+
+      if (add && add !== profile.id) {
+        addContact(add, name);
+        openChat(add);
+      }
+
+      try {
+        history.replaceState({}, "", location.pathname);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    renderProfile();
+    renderContacts();
+    renderMessages();
+
+    initPeer();
+    handleUrl();
+
+    if (!contacts.length && !localStorage.getItem("chatti_started")) {
+      addContact(BOT_ID, "Помощник");
+      openChat(BOT_ID);
+      localStorage.setItem("chatti_started", "1");
+    }
+
+    if (!activeId && contacts.length) {
+      openChat(contacts[0].id);
+    }
+
+    setInterval(updateNetworkStatus, 5000);
+  </script>
+</body>
+</html>
